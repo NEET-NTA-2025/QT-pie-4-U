@@ -42,15 +42,32 @@
     // Load face-api.js models
     async function loadModels() {
       try {
+        // Try loading models locally
+        console.log('Attempting to load models locally from /models');
+        await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+        await faceapi.nets.ageGenderNet.loadFromUri('/models');
+        console.log('Models loaded successfully from local');
+        ageDisplay.textContent = 'Ready! Tap Start Scan!';
+        startBtn.disabled = false;
+        startBtn.textContent = 'Start Scan';
+        return;
+      } catch (err) {
+        console.error('Local model loading failed:', err);
+        ageDisplay.textContent = 'Local models failed. Trying CDN...';
+      }
+
+      // Fallback to CDN
+      try {
+        console.log('Attempting to load models from CDN');
         await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models');
         await faceapi.nets.ageGenderNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models');
-        console.log('Models loaded successfully');
-        ageDisplay.textContent = 'Ready!Strap! Tap Start Scan!';
+        console.log('Models loaded successfully from CDN');
+        ageDisplay.textContent = 'Ready! Tap Start Scan!';
         startBtn.disabled = false;
         startBtn.textContent = 'Start Scan';
       } catch (err) {
-        console.error('Model loading error:', err);
-        ageDisplay.textContent = 'Failed to load models! Try refreshing.';
+        console.error('CDN model loading failed:', err);
+        ageDisplay.textContent = 'Failed to load models! Check your network or refresh.';
       }
     }
 
@@ -58,7 +75,7 @@
     async function startWebcam() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 360 } }
+          video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } }
         });
         video.srcObject = stream;
         video.onloadedmetadata = () => {
